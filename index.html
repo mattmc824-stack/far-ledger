@@ -1,0 +1,1058 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAR Ledger — CPA Study & Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF9F5;
+    --card:#FFFFFF;
+    --ink:#1C2B27;
+    --muted:#6B7770;
+    --rule:#D8DAD0;
+    --rule-strong:#BFC4B8;
+    --credit:#1A6B4F;      /* ledger green = correct / "in the black" */
+    --credit-soft:#E7F1EC;
+    --debit:#A8362B;       /* ledger red = wrong / "in the red" */
+    --debit-soft:#F6E7E4;
+    --gold:#9A7B2E;
+    --shadow:0 1px 2px rgba(28,43,39,.06), 0 8px 24px rgba(28,43,39,.05);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* faint ledger ruling behind everything */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:repeating-linear-gradient(transparent 0 31px, rgba(26,107,79,.04) 31px 32px);
+    mask-image:linear-gradient(transparent, #000 120px);
+  }
+  .wrap{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:0 20px 80px}
+
+  /* ---------- Header ---------- */
+  header.top{padding:34px 0 18px;border-bottom:2px solid var(--ink)}
+  .brand{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .brand h1{
+    font-family:"Source Serif 4",serif;font-weight:700;letter-spacing:-.01em;
+    font-size:clamp(28px,5vw,40px);margin:0;line-height:1;
+  }
+  .brand .tag{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--credit);border:1px solid var(--credit);
+    padding:3px 8px;border-radius:3px;
+  }
+  .sub{color:var(--muted);font-size:14.5px;margin:10px 0 0;max-width:60ch}
+
+  /* ---------- Mode switch ---------- */
+  .modes{display:flex;gap:0;margin:22px 0 0;border:1px solid var(--rule-strong);
+    border-radius:8px;overflow:hidden;width:fit-content;background:var(--card)}
+  .modes button{
+    appearance:none;border:0;background:transparent;cursor:pointer;
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);padding:11px 20px;transition:.15s;
+  }
+  .modes button+button{border-left:1px solid var(--rule)}
+  .modes button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+
+  /* ---------- Section tabs (ledger columns) ---------- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:24px 0 8px;
+    border-bottom:1px solid var(--rule);padding-bottom:12px}
+  .tab{
+    appearance:none;cursor:pointer;background:var(--card);
+    border:1px solid var(--rule-strong);border-radius:7px;
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink);
+    padding:8px 13px;transition:.15s;white-space:nowrap;
+  }
+  .tab small{display:block;font-size:10px;color:var(--muted);letter-spacing:.04em;margin-top:1px}
+  .tab[aria-selected="true"]{background:var(--credit);border-color:var(--credit);color:#fff}
+  .tab[aria-selected="true"] small{color:rgba(255,255,255,.8)}
+  .tab:hover:not([aria-selected="true"]){border-color:var(--credit)}
+
+  /* ---------- Study cards ---------- */
+  .sec-head{margin:26px 0 4px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .sec-head h2{font-family:"Source Serif 4",serif;font-size:24px;font-weight:700;margin:0}
+  .sec-head .count{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted)}
+  .grid{display:grid;gap:14px;margin-top:16px}
+  @media(min-width:680px){.grid{grid-template-columns:1fr 1fr}}
+
+  .card{
+    background:var(--card);border:1px solid var(--rule);border-radius:11px;
+    padding:18px 18px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+  }
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--credit)}
+  .card .acr{
+    font-family:"Source Serif 4",serif;font-weight:700;font-size:21px;letter-spacing:.02em;
+    display:inline-block;margin:0 0 2px;
+  }
+  .card .full{font-size:13px;color:var(--muted);margin:0 0 12px}
+  .card ul{list-style:none;margin:0 0 12px;padding:0}
+  .card li{font-size:14px;padding:4px 0;border-bottom:1px dashed var(--rule);display:flex;gap:9px}
+  .card li:last-child{border-bottom:0}
+  .card li .k{
+    font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--credit);
+    min-width:18px;text-align:center;flex:none;
+  }
+  .hook{
+    background:var(--credit-soft);border-radius:7px;padding:9px 11px;font-size:13px;
+    color:#16503c;margin:0;
+  }
+  .hook b{color:var(--credit)}
+  .je{font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:#F4F3EE;
+    border:1px solid var(--rule);border-radius:7px;padding:10px 12px;margin:10px 0 0;white-space:pre-wrap;color:var(--ink)}
+
+  /* ---------- Quiz ---------- */
+  .quiz-setup{background:var(--card);border:1px solid var(--rule);border-radius:12px;
+    padding:22px;box-shadow:var(--shadow);margin-top:20px}
+  .quiz-setup h2{font-family:"Source Serif 4",serif;margin:0 0 6px;font-size:22px}
+  .quiz-setup p{color:var(--muted);font-size:14px;margin:0 0 16px}
+  .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  .pill{appearance:none;cursor:pointer;background:var(--paper);border:1px solid var(--rule-strong);
+    border-radius:20px;padding:7px 15px;font-size:13px;font-family:"IBM Plex Mono",monospace;
+    color:var(--ink);transition:.15s}
+  .pill[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .btn{appearance:none;cursor:pointer;border:0;border-radius:8px;font-weight:600;
+    font-family:"Inter",sans-serif;font-size:15px;padding:12px 24px;transition:.15s}
+  .btn-primary{background:var(--credit);color:#fff}
+  .btn-primary:hover{background:#155a42}
+  .btn-ghost{background:transparent;border:1px solid var(--rule-strong);color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--ink)}
+
+  .qcard{background:var(--card);border:1px solid var(--rule);border-radius:12px;
+    padding:22px;box-shadow:var(--shadow);margin-top:20px}
+  .qmeta{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;
+    font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted)}
+  .qmeta .badge{background:var(--credit-soft);color:var(--credit);padding:3px 9px;border-radius:5px;letter-spacing:.05em}
+  .progress{height:5px;background:var(--rule);border-radius:3px;overflow:hidden;margin-bottom:18px}
+  .progress > i{display:block;height:100%;background:var(--credit);transition:width .3s}
+  .qtext{font-family:"Source Serif 4",serif;font-size:19px;line-height:1.4;margin:0 0 18px}
+  .choices{display:grid;gap:10px}
+  .choice{appearance:none;text-align:left;cursor:pointer;background:var(--paper);
+    border:1.5px solid var(--rule-strong);border-radius:9px;padding:13px 15px;font-size:14.5px;
+    color:var(--ink);transition:.12s;display:flex;gap:11px;align-items:flex-start;font-family:inherit}
+  .choice:hover:not(:disabled){border-color:var(--credit)}
+  .choice .let{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--muted);flex:none}
+  .choice:disabled{cursor:default}
+  .choice.correct{background:var(--credit-soft);border-color:var(--credit)}
+  .choice.correct .let{color:var(--credit)}
+  .choice.wrong{background:var(--debit-soft);border-color:var(--debit)}
+  .choice.wrong .let{color:var(--debit)}
+  .explain{margin-top:16px;border-top:1px solid var(--rule);padding-top:14px;font-size:14px}
+  .explain .verdict{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.08em;
+    text-transform:uppercase;display:inline-block;padding:3px 9px;border-radius:5px;margin-bottom:9px}
+  .verdict.ok{background:var(--credit);color:#fff}
+  .verdict.no{background:var(--debit);color:#fff}
+  .explain p{margin:0;color:var(--ink)}
+  .qfoot{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px}
+  .qfoot .score{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted)}
+
+  /* ---------- Results ---------- */
+  .results{background:var(--card);border:1px solid var(--rule);border-radius:12px;
+    padding:30px;box-shadow:var(--shadow);margin-top:20px;text-align:center}
+  .results .big{font-family:"Source Serif 4",serif;font-size:64px;font-weight:700;line-height:1;margin:0}
+  .results .big.pass{color:var(--credit)} .results .big.fail{color:var(--debit)}
+  .results .label{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);
+    letter-spacing:.1em;text-transform:uppercase;margin:8px 0 4px}
+  .results .verdict-line{font-size:16px;margin:6px 0 22px}
+  .breakdown{text-align:left;max-width:440px;margin:0 auto 24px}
+  .breakdown .row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;
+    border-bottom:1px dashed var(--rule);font-size:14px}
+  .breakdown .row:last-child{border-bottom:0}
+  .breakdown .bar{flex:1;height:7px;background:var(--rule);border-radius:4px;margin:0 12px;overflow:hidden}
+  .breakdown .bar > i{display:block;height:100%;background:var(--credit)}
+  .breakdown .frac{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);min-width:46px;text-align:right}
+  .results .btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+  /* ---- SRS controls ---- */
+  .field{margin-bottom:16px}
+  .field > .flabel{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block}
+  .seg{display:inline-flex;border:1px solid var(--rule-strong);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+  .seg button{appearance:none;border:0;background:var(--card);cursor:pointer;
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink);padding:9px 15px;transition:.15s}
+  .seg button+button{border-left:1px solid var(--rule)}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+  .seg .desc{display:block;font-family:"Inter",sans-serif;color:var(--muted);font-size:13px;margin-top:8px;max-width:60ch}
+  .seg button[aria-pressed="true"] ~ .desc{}
+
+  /* ---- Progress dashboard ---- */
+  .dash-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:22px 0 4px}
+  .dash-head h2{font-family:"Source Serif 4",serif;font-size:24px;margin:0}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0}
+  .tile{background:var(--card);border:1px solid var(--rule);border-radius:11px;padding:16px 18px;box-shadow:var(--shadow)}
+  .tile .num{font-family:"Source Serif 4",serif;font-weight:700;font-size:30px;line-height:1}
+  .tile .cap{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);margin-top:5px}
+  .tile.accent .num{color:var(--credit)}
+  .tile.warn .num{color:var(--debit)}
+  .sec-master{background:var(--card);border:1px solid var(--rule);border-radius:12px;
+    padding:20px 22px;box-shadow:var(--shadow);margin-top:8px}
+  .sec-master h3{font-family:"Source Serif 4",serif;font-size:18px;margin:0 0 14px}
+  .mrow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--rule);font-size:14px}
+  .mrow:last-child{border-bottom:0}
+  .mrow .mname{min-width:200px;flex:none}
+  .mrow .mname b{font-family:"IBM Plex Mono",monospace;color:var(--ink)}
+  .mrow .mname small{color:var(--muted)}
+  .seg-track{flex:1;height:14px;border-radius:7px;overflow:hidden;display:flex;background:var(--rule);min-width:120px}
+  .seg-track i{display:block;height:100%}
+  .seg-track .seg-master{background:var(--credit)}
+  .seg-track .seg-learning{background:#9bbcae}
+  .seg-track .seg-weak{background:var(--debit)}
+  .seg-track .seg-new{background:var(--rule-strong)}
+  .mrow .mfrac{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--muted);min-width:78px;text-align:right}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .dash-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .mini-btn{appearance:none;cursor:pointer;background:transparent;border:1px solid var(--rule-strong);
+    border-radius:7px;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink);padding:8px 13px;transition:.15s}
+  .mini-btn:hover{border-color:var(--ink)}
+  .mini-btn.danger:hover{border-color:var(--debit);color:var(--debit)}
+  .empty{background:var(--card);border:1px dashed var(--rule-strong);border-radius:12px;
+    padding:36px;text-align:center;color:var(--muted);font-size:14.5px;margin-top:18px}
+
+  footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--rule);
+    font-size:12.5px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+  .hidden{display:none!important}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  :focus-visible{outline:2.5px solid var(--gold);outline-offset:2px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>FAR Ledger</h1>
+      <span class="tag">CPA · 2026</span>
+    </div>
+    <p class="sub">Active-recall memory aids and a scored practice exam across all six FAR areas. Drill the acronyms, then test under exam-style pressure.</p>
+    <div class="modes" role="tablist" aria-label="Mode">
+      <button id="m-study" role="tab" aria-selected="true" onclick="setMode('study')">Study · Memory Aids</button>
+      <button id="m-quiz" role="tab" aria-selected="false" onclick="setMode('quiz')">Practice Test</button>
+      <button id="m-progress" role="tab" aria-selected="false" onclick="setMode('progress')">Progress</button>
+    </div>
+  </header>
+
+  <!-- STUDY -->
+  <main id="studyView">
+    <div class="tabs" id="studyTabs" role="tablist" aria-label="FAR section"></div>
+    <div id="studyBody"></div>
+  </main>
+
+  <!-- QUIZ -->
+  <main id="quizView" class="hidden">
+    <div id="quizSetup"></div>
+    <div id="quizRun" class="hidden"></div>
+    <div id="quizResults" class="hidden"></div>
+  </main>
+
+  <!-- PROGRESS -->
+  <main id="progressView" class="hidden"></main>
+
+  <footer>Built from the 2026 FAR Study Guide · formulas and journal entries reconstructed from the source notes · not affiliated with the AICPA.</footer>
+</div>
+
+<script>
+/* ============================ STUDY CONTENT ============================ */
+const SECTIONS = [
+  {id:"far1", n:"FAR 1", label:"Financial Accounting"},
+  {id:"far2", n:"FAR 2", label:"Reporting & Disclosures"},
+  {id:"far3", n:"FAR 3", label:"Assets"},
+  {id:"far4", n:"FAR 4", label:"Liabilities"},
+  {id:"far5", n:"FAR 5", label:"Investments · CF · Tax"},
+  {id:"far6", n:"FAR 6", label:"NFP & Government"},
+];
+
+const STUDY = {
+far1:{title:"FAR 1 — Financial Accounting", aids:[
+  {acr:"PUFI", full:"The four sources of Other Comprehensive Income", items:[
+    ["P","Pension adjustments (funded status changes)"],
+    ["U","Unrealized G/L on AFS debt securities + cash-flow hedges"],
+    ["F","Foreign currency translation adjustments"],
+    ["I","Instrument-specific credit risk (FVO liabilities)"]],
+   hook:"<b>PUFI puffs straight to equity</b> — these skip net income and land in OCI → AOCI. If a gain hits the income statement, it can't be PUFI."},
+  {acr:"CI = NI + OCI", full:"Where each total closes", items:[
+    ["1","Net income closes to Retained Earnings"],
+    ["2","OCI closes to Accumulated OCI (AOCI)"],
+    ["3","Comprehensive income closes to the Balance Sheet"]],
+   hook:"AOCI is to OCI what Retained Earnings is to Net Income — a <b>running total</b> living in equity."},
+  {acr:"AR↑gain / AP↑loss", full:"Foreign-currency receivables & payables", items:[
+    ["AR","Foreign currency strengthens → your receivable is worth MORE → GAIN"],
+    ["AP","Foreign currency strengthens → it costs MORE to pay → LOSS"]],
+   hook:"You <b>want</b> to be owed in a currency that's rising. Owing in a rising currency hurts."},
+  {acr:"60 · 75 · 90", full:"10-K annual filing deadlines (days after fiscal year-end)", items:[
+    ["60","Large accelerated filer ($700M+ public float)"],
+    ["75","Accelerated filer ($75M–$700M float)"],
+    ["90","All other filers (under $75M)"]],
+   hook:"Bigger company = <b>faster</b> filing. 10-Q deadlines are 40 (large accelerated) / 45 (everyone else)."},
+  {acr:"Small@FMV / Large@Par", full:"Stock dividends", items:[
+    ["Small","< 20–25% of shares → reduce RE by FMV"],
+    ["Large","> 25% of shares → reduce RE by PAR value"]],
+   hook:"A <b>large</b> dividend is assumed to move the market price, so you can't use FMV — fall back to par.",
+   je:"Small:  Retained Earnings   xx\n          Common Stock (par)      xx\n          APIC (plug)            xx"},
+  {acr:"TSM", full:"Treasury Stock Method (dilutive options/warrants)", items:[
+    ["1","Dilutive only if 'in the money': avg market price > exercise price"],
+    ["2","Assume options exercised at start of period"],
+    ["3","Use proceeds to buy back shares at avg market price"],
+    ["4","Net new shares added to diluted EPS denominator"]],
+   hook:"Options only dilute when exercising them is <b>profitable</b>. Otherwise they're anti-dilutive — ignore."},
+  {acr:"Cost vs Par (TS)", full:"Treasury stock methods", items:[
+    ["Cost","G/L recognized on REISSUE; 'gain'→APIC-TS, 'loss'→APIC-TS then RE (95% of cases)"],
+    ["Par","G/L recognized on REPURCHASE; shown as a deduction from capital stock"]],
+   hook:"Treasury stock <b>never</b> produces a gain or loss on the income statement — it routes through equity."},
+  {acr:"Liquidating Dividend", full:"Distribution > investor's share of investee RE", items:[
+    ["≤ RE","Normal dividend income"],
+    ["> RE","Excess is a return of capital → reduces investment basis"]],
+   hook:"Dividends beyond the company's earnings are giving you <b>your own money back</b>, not income.",
+   je:"Cash               1,000,000\n   Dividend income       800,000\n   Investment in XYZ     200,000"},
+]},
+
+far2:{title:"FAR 2 — Reporting & Disclosures", aids:[
+  {acr:"ISTAR", full:"The 5-step revenue recognition model", items:[
+    ["I","Identify the contract with a customer"],
+    ["S","identify Separate performance obligations"],
+    ["T","determine the Transaction price"],
+    ["A","Allocate the price to the obligations (standalone prices)"],
+    ["R","Recognize revenue as/when obligations are satisfied"]],
+   hook:"<b>I-S-T-A-R</b>. Recognize at a point in time OR over time, depending on when control transfers."},
+  {acr:"Estimate=Pro / Principle=Retro / Error=Restate", full:"Accounting changes & corrections", items:[
+    ["Estimate","PROSPECTIVE — current & future only (useful life, depreciation method, allowances)"],
+    ["Principle","RETROSPECTIVE — adjust beginning RE, restate all years (net of tax)"],
+    ["Entity","RETROSPECTIVE"],
+    ["Error","Prior-period adjustment — restate financials, net of tax"]],
+   hook:"Watch the trap: changing <b>depreciation method</b> is a change in <b>estimate</b> (prospective), even though it sounds like principle."},
+  {acr:"MIC", full:"Fair value valuation techniques", items:[
+    ["M","Market approach — prices for identical/comparable assets"],
+    ["I","Income approach — discount future cash flows to PV"],
+    ["C","Cost approach — current replacement cost"]],
+   hook:"Maximize <b>observable</b> inputs. Fair value = <b>exit price</b> — what you'd receive to sell, not what you paid."},
+  {acr:"Level 1·2·3", full:"Fair value input hierarchy", items:[
+    ["1","Observable, active market, IDENTICAL assets (quoted prices)"],
+    ["2","Observable but comparable, or identical in inactive markets"],
+    ["3","Unobservable — entity's own assumptions"]],
+   hook:"Most advantageous market maximizes NRV. Transaction costs <b>pick the market</b> but are excluded from fair value itself."},
+  {acr:"Accrual Rev Bridge", full:"Cash → accrual revenue", items:[
+    ["+","Ending AR (earned this period, cash later)"],
+    ["−","Beginning AR (earned last period, collected now)"],
+    ["+","Beginning unearned (earned this period, cash prior)"],
+    ["−","Ending unearned (cash now, earned next period)"]],
+   hook:"Only count what was <b>earned this period</b>. Add this-period items; subtract other-period items.",
+   je:"Accrual Rev = Cash Rev + ΔAR + ΔUnearned (signed as above)"},
+  {acr:"% Complete vs Completed", full:"Long-term construction contracts", items:[
+    ["% Completion","Costs CAN be estimated → recognize revenue OVER time (cost-to-cost ratio)"],
+    ["Completed","Costs CANNOT be estimated → recognize at a POINT (completion)"]],
+   hook:"Asset when cost+profit > billings; liability when billings > cost+profit."},
+]},
+
+far3:{title:"FAR 3 — Assets", aids:[
+  {acr:"DOBINS", full:"Bank reconciliation adjustments", items:[
+    ["D","Deposits in transit → ADD to bank"],
+    ["O","Outstanding checks → DEDUCT from bank"],
+    ["B","Bank collections → ADD to books"],
+    ["I","Interest income → ADD to books"],
+    ["N","NSF checks → DEDUCT from books"],
+    ["S","Service charges → DEDUCT from books"]],
+   hook:"<b>Bank side</b>: timing items the bank hasn't seen yet. <b>Book side</b>: items the bank knows but you haven't recorded."},
+  {acr:"FIFO↑ / LIFO↓ (rising prices)", full:"Inventory cost flow in inflation", items:[
+    ["FIFO","Highest ending inventory, lowest COGS, highest net income"],
+    ["LIFO","Lowest ending inventory, highest COGS, lowest net income"]],
+   hook:"<b>LIFO = Lowest income</b> when prices rise (and lowest taxes — why it exists). LIFO conformity: tax use forces book use."},
+  {acr:"LCM = Middle", full:"Lower of Cost or Market (LIFO/retail)", items:[
+    ["Ceiling","NRV = selling price − cost to complete/sell"],
+    ["Floor","NRV − normal profit margin"],
+    ["Pick","Replacement cost, but bounded → take the MIDDLE of the three"]],
+   hook:"FIFO/weighted-avg instead use <b>Lower of Cost and NRV</b> (simpler). GAAP <b>prohibits</b> reversing write-downs."},
+  {acr:"FOB · Consignment", full:"Whose inventory is it?", items:[
+    ["FOB Ship Pt","Title passes when SHIPPED → buyer owns goods in transit"],
+    ["FOB Dest","Title passes when RECEIVED → seller owns goods in transit"],
+    ["Consignment","Consignor (owner) keeps it on the books until third-party sale"]],
+   hook:"Inventory follows <b>legal title</b>, not physical possession."},
+  {acr:"Undiscounted → FV", full:"Impairment of PP&E (two steps)", items:[
+    ["Test","Is carrying value > UNDISCOUNTED future cash flows? If yes → impaired"],
+    ["Amount","Write down to FAIR VALUE (or discounted/PV cash flows)"]],
+   hook:"<b>Test</b> with undiscounted; <b>measure</b> with fair value. Held-for-use: no reversal. Held-for-sale: reversal allowed up to prior write-down, no depreciation."},
+  {acr:"Avoidable vs Actual", full:"Capitalized construction-period interest", items:[
+    ["Base","Weighted-average ACCUMULATED EXPENDITURES × rate (not total borrowed)"],
+    ["Rate","Specific construction loan rate first, then weighted-avg on excess"],
+    ["Cap","Capitalize the LOWER of avoidable or actual interest incurred"]],
+   hook:"Only capitalize interest on money <b>actually spent</b>, and never more than you actually paid."},
+  {acr:"Expense R&D", full:"Internally developed intangibles", items:[
+    ["Capitalize","Legal/registration fees, patent defense (successful)"],
+    ["Expense","R&D costs — GAAP prohibits capitalizing internally developed R&D"],
+    ["Cloud","Preliminary = expense · Development = capitalize · Post-impl. = expense"]],
+   hook:"You can capitalize what you <b>buy</b>; you generally expense what you <b>invent</b>."},
+]},
+
+far4:{title:"FAR 4 — Liabilities", aids:[
+  {acr:"OWNES", full:"Finance lease — ANY one triggers capitalization", items:[
+    ["O","Ownership transfers at end of lease"],
+    ["W","Written purchase option reasonably certain to be exercised"],
+    ["N","NPV of payments ≥ substantially all (90%) of fair value"],
+    ["E","Economic life — term is major part (75%) of asset life"],
+    ["S","Specialized asset with no alternative use to lessor"]],
+   hook:"Meet <b>none</b> of OWNES → operating lease. Meet <b>any one</b> → finance lease."},
+  {acr:"REPORT", full:"What's included in lease payments", items:[
+    ["R","Required fixed payments (less incentives)"],
+    ["E","Exercise option reasonably assured"],
+    ["P","Purchase price the lessor can require"],
+    ["O","Only index/rate-based variable payments"],
+    ["R","Residual guarantees likely to be owed"],
+    ["T","Termination penalties reasonably assured"]],
+   hook:"Excludes lessee guarantees of lessor debt and other contingent variable payments."},
+  {acr:"Probable·Possible·Remote", full:"Loss contingencies", items:[
+    ["Probable","Estimable → ACCRUE (record the JE)"],
+    ["Probable","Not estimable → DISCLOSE only"],
+    ["Reasonably possible","DISCLOSE in footnotes"],
+    ["Remote","Ignore (unless a DOG guarantee)"]],
+   hook:"Range of equally-likely losses: <b>accrue the lowest, disclose the highest</b>. Gain contingencies are never accrued."},
+  {acr:"SOCR", full:"Accruing compensated absences (vacation)", items:[
+    ["S","Services already rendered by employee"],
+    ["O","Obligation vests or accumulates"],
+    ["C","Compensation is probable"],
+    ["R","Reasonably estimable"]],
+   hook:"All four → accrue at the <b>current</b> salary rate in the year earned."},
+  {acr:"ARO: Accrete↑ / Depreciate↓", full:"Asset Retirement Obligation", items:[
+    ["Record","Liability at PV of future cleanup (fair value); add equal asset cost (ARC)"],
+    ["ARO","Grows each year via accretion expense = beginning balance × discount rate"],
+    ["ARC","Shrinks via depreciation over the asset's life"]],
+   hook:"At the end: total cash paid = cumulative accretion (interest) + cumulative depreciation (principal)."},
+  {acr:"CV × Market", full:"Effective interest on bonds/notes", items:[
+    ["Interest exp","Carrying value × MARKET rate at issuance"],
+    ["Cash paid","Face value × STATED (coupon) rate"],
+    ["Amortization","The difference between the two"]],
+   hook:"Market > stated → <b>discount</b> (sells below par). Market < stated → <b>premium</b>. Zero-coupon: all interest is amortization."},
+  {acr:"TDR: Future < Carrying", full:"Troubled debt — modification of terms", items:[
+    ["Gain","Total UNDISCOUNTED future payments < carrying amount → reduce CV, book gain"],
+    ["No gain","If future payments ≥ carrying amount → no gain, no interest recognized"]],
+   hook:"After a gain, all future cash payments just reduce carrying amount — <b>no interest expense</b>."},
+]},
+
+far5:{title:"FAR 5 — Investments · Cash Flows · Tax", aids:[
+  {acr:"Trading·AFS·HTM", full:"Debt security classification", items:[
+    ["Trading","FV through net income (unrealized G/L → NI)"],
+    ["AFS","FV through OCI (unrealized G/L → OCI until realized)"],
+    ["HTM","Amortized cost (no unrealized G/L recognized; debt only)"]],
+   hook:"Equity securities (under 20%) are <b>always</b> FV through net income. Only debt can be HTM."},
+  {acr:"0·20·50", full:"Equity investment thresholds", items:[
+    ["< 20%","No influence → FV through net income"],
+    ["20–50%","Significant influence → EQUITY METHOD"],
+    ["> 50%","Control → CONSOLIDATE (acquisition method)"]],
+   hook:"Equity method: dividends <b>reduce</b> the investment (not income); your share of earnings <b>increases</b> it."},
+  {acr:"CARINBIG", full:"Consolidation elimination entry (acquisition method)", items:[
+    ["C","Common stock — subsidiary (eliminate)"],
+    ["A","APIC — subsidiary (eliminate)"],
+    ["R","Retained earnings — subsidiary (eliminate)"],
+    ["I","Investment in subsidiary (eliminate)"],
+    ["N","Noncontrolling interest (credit, at FV in equity)"],
+    ["B","Balance sheet adjustments to fair value"],
+    ["I","Identifiable intangibles to fair value"],
+    ["G","Goodwill (the plug)"]],
+   hook:"CAR is eliminated, IN balances the swap, BIG steps assets up to FV with goodwill as the plug. 100% of intercompany transactions are eliminated."},
+  {acr:"CLAD", full:"Indirect-method operating cash flow adjustments", items:[
+    ["C","Changes in current operating Assets/Liabilities"],
+    ["L","Losses (add back) and gains (subtract)"],
+    ["A","Amortization & depreciation (add back)"],
+    ["D","Deferred items"]],
+   hook:"Current <b>assets</b>: move OPPOSITE (increase → subtract). Current <b>liabilities</b>: move SAME (increase → add)."},
+  {acr:"DTL vs DTA", full:"Deferred taxes — pay more or less later", items:[
+    ["DTL","Pay MORE later: book income first / taxable later (accelerated tax depreciation, installment sales, equity-method earnings)"],
+    ["DTA","Pay LESS later: taxable first / book later (warranties, unearned/prepaid revenue, bad-debt allowance)"]],
+   hook:"DTA is a 'gift certificate' for future tax savings — needs a <b>valuation allowance</b> if 'more likely than not' (>50%) it won't be used."},
+  {acr:"DRD", full:"Dividends received deduction (permanent diff at top tier)", items:[
+    ["0–19%","50% exclusion"],
+    ["20–80%","65% exclusion"],
+    ["> 80%","100% exclusion (permanent difference)"]],
+   hook:"More ownership = more of the dividend excluded — the system avoids taxing the same earnings repeatedly."},
+]},
+
+far6:{title:"FAR 6 — NFP & Government", aids:[
+  {acr:"SOME", full:"When to record donated SERVICES", items:[
+    ["S","Specialized skills are required"],
+    ["O","Otherwise would need to be purchased"],
+    ["M","Measurable easily"],
+    ["E","(skill that someone) possEsses & provides"]],
+   hook:"Most volunteer hours go unrecorded. Record only if they <b>create/enhance a nonfinancial asset</b> OR need specialized skills."},
+  {acr:"MAC-GRaSPP", full:"Governmental funds — the basis, focus, and the five funds", items:[
+    ["M","Modified..."],
+    ["A","...Accrual accounting"],
+    ["C","Current financial resources measurement focus"],
+    ["G","General fund"],
+    ["R","special Revenue fund"],
+    ["S","debt Service fund"],
+    ["P","capital Projects fund"],
+    ["P","Permanent fund"]],
+   hook:"<b>MAC</b> tells you the accounting (Modified Accrual, Current financial resources); <b>GRaSPP</b> lists the funds. Revenue is recognized when <b>measurable AND available</b> (~60 days after year-end)."},
+  {acr:"SCARE (SE-CIPPOE)", full:"Proprietary & fiduciary funds — full accrual", items:[
+    ["S·E","internal Service, Enterprise (proprietary)"],
+    ["C","Custodial (fiduciary)"],
+    ["I","Investment trust"],
+    ["P·P","Private-purpose trust, Pension trust"],
+    ["O·E","Other Employee benefit trust"],
+    ["A","Accrual accounting (full)"],
+    ["R","Record non-current assets & liabilities"],
+    ["E","Economic resources measurement focus"]],
+   hook:"<b>SCARE</b> nests it: S+C give the funds (SE-CIPPOE), and A-R-E give the accounting — full Accrual, Records non-current A&L, Economic resources focus. The mirror image of MAC-GRaSPP."},
+  {acr:"With / Without DR", full:"NFP net asset classes", items:[
+    ["Without donor restriction","Board can designate freely"],
+    ["With donor restriction","Externally imposed by the donor (purpose or time)"]],
+   hook:"A <b>condition</b> (a barrier + right of return) ≠ a <b>restriction</b>. Conditional contributions aren't recognized as revenue until the barrier is overcome."},
+  {acr:"URMICE", full:"Govt financial reporting characteristics", items:[
+    ["U","Understandability"],
+    ["R","Reliability"],
+    ["M","Make a difference (relevance)"],
+    ["I","(timel)Iness"],
+    ["C","Consistency (year over year)"],
+    ["E","comparability (Entity to entity)"]],
+   hook:"The qualities that make government financial reports useful to citizens and oversight bodies."},
+]},
+};
+
+/* ============================ QUESTION BANK ============================ */
+const QUESTIONS = [
+/* ---- FAR 1 ---- */
+{s:"far1",q:"Stock was originally issued at $10 par for $15. Under the COST method, 200 treasury shares bought at $20 are later reissued at $13. The $7/share shortfall (cost $20 vs. reissue $13) is charged first to APIC-Treasury Stock, then to:",c:["Common Stock","Retained Earnings","Gain on sale","APIC-Common Stock"],a:1,e:"Cost method: a reissue 'loss' is charged against any prior APIC-TS balance, and any remainder goes to Retained Earnings. It never hits the income statement."},
+{s:"far1",q:"Under the PAR value method, 200 shares (originally issued at $10 par, sold at $15) are repurchased at $20. The amount charged to Retained Earnings is:",c:["$0","$1,000","$2,000","$4,000"],a:1,e:"Par method records TS at par (200×$10=2,000) and removes original APIC-CS (200×$5=1,000). The excess paid above the $15 issue price (200×$5=1,000) is charged to RE — the 'loss' is recognized immediately on repurchase."},
+{s:"far1",q:"Which item is reported in Other Comprehensive Income rather than net income?",c:["Realized gain on a trading security","Unrealized gain on an available-for-sale debt security","Dividend income from a 10%-owned investee","Gain on sale of equipment"],a:1,e:"Unrealized G/L on AFS debt securities is a PUFI item that flows to OCI. Trading-security gains, dividend income, and equipment gains all hit net income."},
+{s:"far1",q:"A company declares a 10% common stock dividend. By what amount is Retained Earnings reduced?",c:["Par value of shares issued","Fair market value of shares issued","Average of par and market","No reduction — memo entry only"],a:1,e:"A small stock dividend (<20–25%) is recorded at fair market value. Only large dividends (>25%) use par value."},
+{s:"far1",q:"A U.S. company holds a receivable denominated in euros. The euro strengthens against the dollar before collection. The company records a:",c:["Foreign currency loss","Foreign currency gain","Translation adjustment in OCI only","No entry until collection"],a:1,e:"A receivable in a strengthening foreign currency is worth more dollars — a transaction GAIN. (A payable in that case would be a loss.)"},
+{s:"far1",q:"Under the cost method, reissuing treasury stock above its reacquisition cost results in a credit to:",c:["Gain on sale (income statement)","Retained Earnings","Additional Paid-in Capital — Treasury Stock","Common Stock"],a:2,e:"Treasury stock transactions never produce income-statement gains. The excess is credited to APIC-TS; losses are charged against prior APIC-TS, then RE."},
+{s:"far1",q:"A large accelerated filer must file its Form 10-K within how many days of fiscal year-end?",c:["40 days","45 days","60 days","90 days"],a:2,e:"Large accelerated filers (≥$700M float) get 60 days for the 10-K. Accelerated = 75 days; all others = 90 days."},
+{s:"far1",q:"In computing diluted EPS, stock options are dilutive only when:",c:["The exercise price exceeds the average market price","The average market price exceeds the exercise price","Options have vested","The company reports net income"],a:1,e:"Options are 'in the money' and dilutive when the average market price exceeds the exercise price; otherwise they are anti-dilutive and excluded."},
+{s:"far1",q:"Comprehensive income is best described as:",c:["Net income plus other comprehensive income","Net income minus preferred dividends","Revenues minus expenses only","Changes in equity from owner transactions"],a:0,e:"Comprehensive income = net income + OCI. It captures all changes in equity EXCEPT transactions with owners (investments/distributions)."},
+{s:"far1",q:"A liquidating dividend is the portion of a distribution that:",c:["Exceeds the investor's share of investee retained earnings","Is paid in property rather than cash","Is declared but not yet paid","Is paid to preferred shareholders first"],a:0,e:"A liquidating dividend exceeds the investor's share of the investee's RE — it's a return of capital that reduces the investment basis, not income."},
+
+/* ---- FAR 2 ---- */
+{s:"far2",q:"What is the correct order of the five-step revenue recognition model?",c:["Identify contract, separate obligations, transaction price, allocate, recognize","Transaction price, identify contract, allocate, recognize, separate obligations","Identify contract, transaction price, allocate, separate obligations, recognize","Separate obligations, identify contract, recognize, allocate, transaction price"],a:0,e:"ISTAR: Identify the contract → identify Separate performance obligations → determine Transaction price → Allocate → Recognize."},
+{s:"far2",q:"A change from straight-line to double-declining-balance depreciation is accounted for:",c:["Retrospectively, restating prior years","Prospectively, as a change in estimate","As a prior-period adjustment","Only in footnote disclosure"],a:1,e:"A change in depreciation method is treated as a change in estimate (prospective) — a classic exam trap, since it sounds like a change in principle."},
+{s:"far2",q:"Correcting an error in previously issued financial statements is handled as a:",c:["Prospective change in estimate","Retrospective change in principle","Prior-period adjustment, net of tax","Component of current net income"],a:2,e:"Errors are corrected via prior-period adjustment — restate the affected financials net of tax; they don't run through current income."},
+{s:"far2",q:"Under GAAP, fair value is defined as:",c:["Historical cost adjusted for inflation","The exit price to sell an asset or transfer a liability","Replacement cost in the entity's market","Net book value at the measurement date"],a:1,e:"Fair value is an EXIT price — what you'd receive to sell an asset (or pay to transfer a liability) in the principal or most advantageous market."},
+{s:"far2",q:"In a Level 1 fair value measurement, inputs are:",c:["Unobservable, based on the entity's assumptions","Observable for comparable assets in active markets","Quoted prices for identical assets in active markets","Observable for identical assets in inactive markets"],a:2,e:"Level 1 = quoted prices for IDENTICAL assets in ACTIVE markets. Level 2 is comparable/inactive-observable; Level 3 is unobservable."},
+{s:"far2",q:"Cash-basis revenue was $100,000. AR rose $8,000 and unearned revenue fell $3,000. Accrual revenue equals:",c:["$89,000","$95,000","$105,000","$111,000"],a:3,e:"Add the AR increase (+8,000: earned this period, cash not yet collected). A fall in unearned revenue (+3,000) means cash collected earlier is now earned this period. 100,000 + 8,000 + 3,000 = $111,000."},
+{s:"far2",q:"The percentage-of-completion method is used for long-term contracts when:",c:["Costs cannot be reasonably estimated","Costs can be reasonably estimated","The contract is under one year","The buyer can cancel at any time"],a:1,e:"Percentage-of-completion (revenue over time) requires reliable cost estimates. If costs can't be estimated, use the completed-contract method (point in time)."},
+
+/* ---- FAR 3 ---- */
+{s:"far3",q:"On a bank reconciliation, a deposit in transit is:",c:["Added to the bank balance","Deducted from the bank balance","Added to the book balance","Deducted from the book balance"],a:0,e:"DOBINS: Deposits in transit are ADDED to the bank balance — the company recorded them but the bank hasn't yet."},
+{s:"far3",q:"An NSF check returned with the bank statement is:",c:["Added to the bank balance","Deducted from the book balance","Added to the book balance","Ignored"],a:1,e:"An NSF check means cash you thought you had isn't there — DEDUCT from the book balance."},
+{s:"far3",q:"In a period of rising prices, LIFO produces the:",c:["Highest ending inventory and net income","Lowest ending inventory and lowest net income","Highest net income and lowest COGS","Same results as FIFO"],a:1,e:"Rising prices: LIFO charges newest (highest) costs to COGS → lowest ending inventory, highest COGS, lowest net income (and lowest taxes)."},
+{s:"far3",q:"Goods shipped FOB shipping point that are in transit at year-end belong in whose inventory?",c:["The seller's","The buyer's","Split 50/50","The carrier's"],a:1,e:"FOB shipping point: title passes when the goods leave the seller, so the BUYER includes in-transit goods in inventory."},
+{s:"far3",q:"To determine whether a long-lived asset held for use is impaired, the carrying value is compared to:",c:["Fair value","Discounted future cash flows","Undiscounted future cash flows","Replacement cost"],a:2,e:"Step 1 (the impairment TEST) uses UNDISCOUNTED future cash flows. If impaired, Step 2 measures the loss using fair value (or discounted CF)."},
+{s:"far3",q:"Consigned goods held by the consignee are reported in inventory by:",c:["The consignee (agent)","The consignor (owner)","Neither party","Whoever has physical possession"],a:1,e:"Title stays with the consignor until the third-party sale, so the CONSIGNOR keeps the goods in inventory. The consignee only earns commission."},
+{s:"far3",q:"Internally developed research and development costs are generally:",c:["Capitalized and amortized","Capitalized and tested for impairment","Expensed as incurred","Recorded in OCI"],a:2,e:"GAAP prohibits capitalizing internally developed R&D — it's expensed as incurred. Only specifically identifiable costs like legal/registration fees can be capitalized."},
+{s:"far3",q:"Capitalized construction-period interest is the LOWER of:",c:["Stated rate or market rate","Avoidable interest or actual interest incurred","Specific loan or general debt interest","Weighted-average expenditures or total borrowings"],a:1,e:"Cap the lower of avoidable (computed on weighted-average accumulated expenditures) or the actual total interest incurred during construction."},
+
+/* ---- FAR 4 ---- */
+{s:"far4",q:"A lease is classified as a finance lease if:",c:["All five OWNES criteria are met","Any one OWNES criterion is met","The term is under 12 months","Payments are made monthly"],a:1,e:"Meeting ANY ONE of OWNES (Ownership, Written option, NPV ≥90%, Economic life ≥75%, Specialized) makes it a finance lease. Meeting none = operating."},
+{s:"far4",q:"A loss contingency that is probable and can be reasonably estimated should be:",c:["Disclosed only","Accrued with a journal entry","Ignored","Recorded in OCI"],a:1,e:"Probable + reasonably estimable = accrue (record the liability and loss). Reasonably possible = disclose; remote = ignore (unless a DOG guarantee)."},
+{s:"far4",q:"For a range of equally likely losses with no best estimate, GAAP requires accruing:",c:["The highest amount","The midpoint","The lowest amount, disclosing the highest","Nothing until resolved"],a:2,e:"GAAP: accrue the minimum of the range and disclose the maximum. (IFRS uses the midpoint.)"},
+{s:"far4",q:"A bond is issued when the market rate exceeds the stated rate. The bond sells at:",c:["A premium","Par","A discount","Face value plus accrued interest"],a:2,e:"Market > stated means investors demand more than the coupon offers, so the bond sells below face — a DISCOUNT."},
+{s:"far4",q:"An asset retirement obligation is initially recorded at:",c:["The undiscounted future cash outflow","The present value (fair value) of the future obligation","Historical cost","Replacement cost"],a:1,e:"An ARO is recorded at the PV of estimated future cleanup costs (fair value), with an equal asset retirement cost added to the asset."},
+{s:"far4",q:"Under the effective interest method, interest expense equals:",c:["Face value × stated rate","Carrying value × market rate","Face value × market rate","Carrying value × stated rate"],a:1,e:"Interest expense = carrying value × market (effective) rate. Cash paid = face × stated rate. The difference is amortization."},
+{s:"far4",q:"In a troubled debt restructuring (modification of terms), the debtor records a gain when:",c:["Total undiscounted future payments are less than the carrying amount","The interest rate is lowered","The maturity is extended","Any concession is granted"],a:0,e:"Gain only when total UNDISCOUNTED future cash payments fall below the carrying amount. Then CV is reduced and no future interest expense is recognized."},
+{s:"far4",q:"Compensated absences (vacation) are accrued when all SOCR conditions are met. SOCR stands for Services rendered, Obligation accumulates, Compensation probable, and:",c:["Recorded at par","Reasonably estimable","Remote possibility","Retrospective adjustment"],a:1,e:"SOCR: Services rendered, Obligation vests/accumulates, Compensation probable, Reasonably estimable — accrued at the current salary rate."},
+
+/* ---- FAR 5 ---- */
+{s:"far5",q:"Unrealized gains and losses on trading debt securities are reported in:",c:["Other comprehensive income","Net income","Retained earnings directly","Not recognized"],a:1,e:"Trading securities are FV through net income — unrealized G/L hit the income statement immediately."},
+{s:"far5",q:"Unrealized gains and losses on available-for-sale debt securities are reported in:",c:["Net income","Other comprehensive income","A valuation allowance only","Not recognized until maturity"],a:1,e:"AFS debt is FV through OCI. The unrealized G/L sits in OCI/AOCI and is reclassified to net income when realized."},
+{s:"far5",q:"Held-to-maturity debt securities are reported on the balance sheet at:",c:["Fair value","Amortized cost","Lower of cost or market","Net realizable value"],a:1,e:"HTM securities are carried at amortized cost; no unrealized G/L is recognized. Only debt (with a maturity) can be HTM."},
+{s:"far5",q:"Under the equity method, a cash dividend received from the investee is:",c:["Recorded as dividend income","A reduction of the investment account","An increase in the investment account","Reported in OCI"],a:1,e:"Equity method: dividends reduce the investment account (return of value already recognized). Your share of investee net income increases it."},
+{s:"far5",q:"In the consolidation elimination entry, noncontrolling interest is:",c:["Eliminated like the subsidiary's equity","Reported at fair value in the equity section","Reported as a liability","Netted against goodwill"],a:1,e:"CARINBIG: the sub's CS/APIC/RE are eliminated, but NCI is credited and reported at fair value in consolidated equity."},
+{s:"far5",q:"On the indirect-method cash flow statement, an increase in accounts receivable is:",c:["Added to net income","Subtracted from net income","Added in financing activities","Ignored"],a:1,e:"Current operating assets move OPPOSITE: an AR increase means revenue was recognized but cash not yet collected — subtract from net income."},
+{s:"far5",q:"Using accelerated depreciation for tax but straight-line for books (rising book value differences) creates a:",c:["Deferred tax asset","Deferred tax liability","Permanent difference","Valuation allowance"],a:1,e:"Book income exceeds taxable income now (lower tax depreciation later), so you'll pay MORE tax later — a deferred tax LIABILITY."},
+{s:"far5",q:"A deferred tax asset valuation allowance is required when it is:",c:["Certain the DTA will be realized","More likely than not (>50%) that part won't be realized","The DTA relates to a permanent difference","The tax rate has changed"],a:1,e:"If it's more likely than not (>50%) that some/all of the DTA won't be realized, record a valuation allowance (contra-asset)."},
+{s:"far5",q:"A partner is admitted by investing cash that exceeds the book value of the interest received. Under the bonus method, the excess is:",c:["Recorded as goodwill","Allocated to existing partners by their P/L ratio","Recorded as a gain","Refunded to the new partner"],a:1,e:"Bonus method recognizes no goodwill — the excess paid is a bonus allocated to the existing partners based on their profit-and-loss ratio."},
+{s:"far5",q:"Parent owns 80% of a sub. The sub earns $300,000 net income this year. How much is allocated to the noncontrolling interest?",c:["$0","$60,000","$240,000","$300,000"],a:1,e:"NCI gets its ownership share of sub net income: 300,000 × 20% = $60,000. The other $240,000 (80%) flows to the parent and into consolidated retained earnings."},
+{s:"far5",q:"Lunova acquires 100% of Voltari for $120M. Voltari's identifiable assets have a fair value of $110M and liabilities $20M. Goodwill recorded is:",c:["$10M","$20M","$30M","$120M"],a:2,e:"Goodwill = price − fair value of net identifiable assets = 120 − (110 − 20) = 120 − 90 = $30M. (If price were below net asset FV, the difference would be a gain, or APIC under pushdown.)"},
+
+/* ---- FAR 6 ---- */
+{s:"far6",q:"A nonprofit should record donated services when they require specialized skills and would otherwise be purchased. This rule is remembered as:",c:["PUFI","SOME","DOBINS","SOCR"],a:1,e:"SOME — Specialized skills, Otherwise purchased, Measurable, possEssed/provided. Otherwise, volunteer services aren't recorded."},
+{s:"far6",q:"Governmental funds (the GRaSPP funds) use which basis of accounting and measurement focus?",c:["Full accrual; economic resources","Modified accrual; current financial resources","Cash basis; total resources","Modified cash; economic resources"],a:1,e:"GRaSPP (General, Special Revenue, Debt Service, Capital Projects, Permanent) use MODIFIED ACCRUAL and the current financial resources focus."},
+{s:"far6",q:"Enterprise and internal service funds use:",c:["Modified accrual / current financial resources","Full accrual / economic resources","Cash basis","Budgetary basis only"],a:1,e:"Proprietary funds (enterprise, internal service) — like the SE-CIPPOE group — use FULL ACCRUAL and the economic resources measurement focus, like a business."},
+{s:"far6",q:"Under modified accrual, revenue is recognized when it is measurable and:",c:["Earned","Collected in cash","Available (collectible within ~60 days of year-end)","Budgeted"],a:2,e:"Modified accrual recognizes revenue when measurable AND available — generally collectible within the period or ~60 days after year-end."},
+{s:"far6",q:"A contribution that contains a barrier and a right of return is:",c:["Recognized immediately as restricted revenue","A conditional contribution — not recognized until the barrier is overcome","Recorded as a liability permanently","Reported in OCI"],a:1,e:"A condition (barrier + right of return) differs from a restriction. Conditional contributions aren't recognized as revenue until the condition is substantially met."},
+{s:"far6",q:"Nonprofit net assets are classified as:",c:["Restricted and unrestricted","With donor restrictions and without donor restrictions","Permanently and temporarily restricted","Current and noncurrent"],a:1,e:"Current NFP reporting uses two classes: net assets WITH donor restrictions and WITHOUT donor restrictions."},
+];
+
+/* ============================ STORAGE + SRS ENGINE ============================ */
+// Stable per-question ID from a hash of the question text, so adding/reordering
+// questions later won't scramble saved progress.
+function hashStr(s){let h=5381;for(let i=0;i<s.length;i++){h=((h<<5)+h)+s.charCodeAt(i);h|=0;}return (h>>>0).toString(36);}
+QUESTIONS.forEach(q=>{q.id=q.s+"_"+hashStr(q.q);});
+
+const STORE_KEY="far_ledger_progress_v1";
+/* ===== CLOUD SYNC + PASSWORD LOGIN (added) ===== */
+const API_BASE = "https://far-ledger-sync-production.up.railway.app";
+const USERKEY_LS = "far_ledger_user_key";
+const TOKEN_LS = "far_ledger_token";
+function getUserKey(){ try{return localStorage.getItem(USERKEY_LS)||"";}catch(e){return "";} }
+function setUserKey(k){ try{localStorage.setItem(USERKEY_LS,k);}catch(e){} }
+function clearUserKey(){ try{localStorage.removeItem(USERKEY_LS);}catch(e){} }
+function getToken(){ try{return localStorage.getItem(TOKEN_LS)||"";}catch(e){return "";} }
+function setToken(t){ try{localStorage.setItem(TOKEN_LS,t);}catch(e){} }
+function clearToken(){ try{localStorage.removeItem(TOKEN_LS);}catch(e){} }
+async function login(){
+  const pw = prompt("Enter the FAR Ledger access password:");
+  if(pw===null) return false;
+  try{
+    const r = await fetch(API_BASE+"/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pw})});
+    if(!r.ok){ alert("That password was not accepted."); return false; }
+    const j = await r.json();
+    if(j && j.token){ setToken(j.token); return true; }
+    return false;
+  }catch(e){ console.warn("login failed (offline?)",e); return false; }
+}
+async function authedFetch(url, opts, allowRetry){
+  opts = opts||{}; opts.headers = Object.assign({}, opts.headers||{});
+  const tok = getToken(); if(tok) opts.headers["Authorization"] = "Bearer "+tok;
+  const r = await fetch(url, opts);
+  if(r.status===401 && allowRetry!==false){
+    const ok = await login();
+    if(ok) return authedFetch(url, opts, false);
+  }
+  return r;
+}
+async function remoteGet(userKey){
+  const r = await authedFetch(API_BASE+"/api/progress/"+encodeURIComponent(userKey));
+  if(!r.ok) throw new Error("GET failed "+r.status);
+  return r.json();
+}
+async function remotePut(userKey, data){
+  const r = await authedFetch(API_BASE+"/api/progress/"+encodeURIComponent(userKey),{
+    method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({data})
+  });
+  if(!r.ok) throw new Error("PUT failed "+r.status);
+  return r.json();
+}
+// Merge two progress objects per-question, keeping the record with the newer "last".
+function mergeProgress(localP, remoteP){
+  const out = { q: {} };
+  const lq = (localP&&localP.q)||{}, rq = (remoteP&&remoteP.q)||{};
+  const ids = new Set([...Object.keys(lq), ...Object.keys(rq)]);
+  ids.forEach(id=>{
+    const l = lq[id], r = rq[id];
+    if(l && r){ out.q[id] = ((l.last||0) >= (r.last||0)) ? l : r; }
+    else { out.q[id] = l || r; }
+  });
+  return out;
+}
+let __pushTimer = null;
+function schedulePush(){
+  const userKey = getUserKey();
+  if(!userKey) return;            // not signed in yet -> local only
+  if(__pushTimer) clearTimeout(__pushTimer);
+  __pushTimer = setTimeout(async ()=>{
+    try{ await remotePut(userKey, Store.read()); }
+    catch(e){ console.warn("sync push failed (will retry on next save)", e); }
+  }, 1500);
+}
+async function startupSync(){
+  const userKey = getUserKey();
+  if(!userKey) return;            // no key -> local-only
+  if(!getToken()){ const ok = await login(); if(!ok) return; }  // need password first
+  try{
+    const remote = await remoteGet(userKey);              // { data, updated_at }
+    const remoteP = (remote && remote.data) ? remote.data : { q:{} };
+    const merged = mergeProgress(Store.read(), remoteP);
+    Store.write(merged);          // updates local (and queues a push via schedulePush)
+    if(mode==="progress") renderProgress();
+  }catch(e){ console.warn("startup sync failed (working offline/local-only)", e); }
+}
+function ensureUserKey(){
+  if(getUserKey()) return;
+  const k = prompt("Enter a sync name (e.g. your son's first name). Used to sync progress across devices:");
+  if(k && k.trim()) setUserKey(k.trim());
+}
+function changeUserKey(){
+  const cur = getUserKey();
+  const k = prompt("Sync name (leave blank to sign out of cloud sync):", cur);
+  if(k===null) return;
+  if(k.trim()===""){ clearUserKey(); clearToken(); if(mode==="progress") renderProgress(); return; }
+  setUserKey(k.trim());
+  startupSync();
+  if(mode==="progress") renderProgress();
+}
+/* ===== END CLOUD SYNC ===== */
+let memFallback=null;        // used if localStorage is unavailable (e.g. sandboxed preview)
+let storageLive=true;
+const Store={
+  read(){
+    try{const raw=localStorage.getItem(STORE_KEY);return raw?JSON.parse(raw):{q:{}};}
+    catch(e){storageLive=false;return memFallback||(memFallback={q:{}});}
+  },
+  write(obj){
+    try{localStorage.setItem(STORE_KEY,JSON.stringify(obj));}
+    catch(e){storageLive=false;memFallback=obj;}
+    schedulePush();
+  }
+};
+// Leitner boxes 1..5. New = unseen. Correct => box+1 (cap 5). Wrong => box 1.
+function recordResult(id,correct){
+  const p=Store.read();
+  const rec=p.q[id]||{box:1,seen:0,correct:0,wrong:0,last:0};
+  rec.seen++;
+  if(correct){rec.correct++; rec.box=Math.min((rec.box||1)+1,5);}
+  else{rec.wrong++; rec.box=1;}
+  rec.last=Date.now();
+  p.q[id]=rec;
+  Store.write(p);
+}
+function statusOf(id){               // new | weak | learning | mastered
+  const rec=Store.read().q[id];
+  if(!rec||rec.seen===0) return "new";
+  if(rec.box>=4) return "mastered";
+  if(rec.box<=2) return "weak";
+  return "learning";
+}
+// Weighted pick for smart review: unseen and weak surface most often.
+function srsWeight(id){
+  const rec=Store.read().q[id];
+  if(!rec||rec.seen===0) return 6;     // never seen — high priority
+  return Math.max(1,7-(rec.box||1));   // box1->6 ... box5->2... clamp >=1 => box5->2
+}
+function weightedSample(pool,n){
+  const items=pool.map(q=>({q,w:srsWeight(q.id)}));
+  const out=[];
+  while(out.length<n && items.length){
+    const total=items.reduce((s,x)=>s+x.w,0);
+    let r=Math.random()*total, k=0;
+    for(;k<items.length;k++){r-=items[k].w; if(r<=0) break;}
+    if(k>=items.length) k=items.length-1;
+    out.push(items[k].q); items.splice(k,1);
+  }
+  return out;
+}
+
+/* ============================ STATE & RENDER ============================ */
+let mode="study";
+let studySec="far1";
+let quizSecs=new Set(["all"]);
+let quizType="smart";   // smart | fresh | weak
+let quizLen="all";      // "all" | number
+let quiz=null;          // {items:[], idx, answers:[]}
+
+function setMode(m){
+  mode=m;
+  ["study","quiz","progress"].forEach(x=>{
+    document.getElementById("m-"+x).setAttribute("aria-selected", m===x);
+  });
+  document.getElementById("studyView").classList.toggle("hidden", m!=="study");
+  document.getElementById("quizView").classList.toggle("hidden", m!=="quiz");
+  document.getElementById("progressView").classList.toggle("hidden", m!=="progress");
+  if(m==="quiz" && !quiz) renderSetup();
+  if(m==="progress") renderProgress();
+}
+
+/* ----- Study ----- */
+function renderStudyTabs(){
+  const t=document.getElementById("studyTabs");
+  t.innerHTML="";
+  SECTIONS.forEach(s=>{
+    const b=document.createElement("button");
+    b.className="tab"; b.setAttribute("role","tab");
+    b.setAttribute("aria-selected", s.id===studySec);
+    b.innerHTML=`${s.n}<small>${s.label}</small>`;
+    b.onclick=()=>{studySec=s.id; renderStudyTabs(); renderStudy();};
+    t.appendChild(b);
+  });
+}
+function esc(x){return x;} // content is trusted/static
+function renderStudy(){
+  const data=STUDY[studySec];
+  const body=document.getElementById("studyBody");
+  let html=`<div class="sec-head"><h2>${data.title}</h2><span class="count">${data.aids.length} memory aids</span></div><div class="grid">`;
+  data.aids.forEach(a=>{
+    html+=`<div class="card"><div class="acr">${a.acr}</div><div class="full">${a.full}</div><ul>`;
+    a.items.forEach(it=>html+=`<li><span class="k">${it[0]}</span><span>${it[1]}</span></li>`);
+    html+=`</ul>`;
+    if(a.hook) html+=`<p class="hook">${a.hook}</p>`;
+    if(a.je) html+=`<div class="je">${a.je}</div>`;
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+  body.innerHTML=html;
+}
+
+/* ----- Quiz setup ----- */
+function renderSetup(){
+  const el=document.getElementById("quizSetup");
+  document.getElementById("quizRun").classList.add("hidden");
+  document.getElementById("quizResults").classList.add("hidden");
+  el.classList.remove("hidden");
+
+  let pills=`<button class="pill" aria-pressed="${quizSecs.has('all')}" onclick="togglePill('all')">All sections</button>`;
+  SECTIONS.forEach(s=>{
+    pills+=`<button class="pill" aria-pressed="${quizSecs.has(s.id)}" onclick="togglePill('${s.id}')">${s.n}</button>`;
+  });
+
+  const types=[
+    ["smart","Smart review","Weighted by your history — questions you've missed or never seen come up most often."],
+    ["weak","Weak spots only","Only questions you've gotten wrong or haven't mastered yet."],
+    ["fresh","Fresh shuffle","Pure random across the selected sections, ignoring your history."],
+  ];
+  let typeBtns=types.map(t=>`<button aria-pressed="${quizType===t[0]}" onclick="setType('${t[0]}')">${t[1]}</button>`).join("");
+  const typeDesc=types.find(t=>t[0]===quizType)[2];
+
+  const lens=[["10","10"],["20","20"],["all","All"]];
+  let lenBtns=lens.map(l=>`<button aria-pressed="${quizLen===l[0]}" onclick="setLen('${l[0]}')">${l[1]}</button>`).join("");
+
+  const avail=buildPool().length;
+  const reviewCount=poolForType("weak").length;
+  const newCount=basePool().filter(q=>statusOf(q.id)==="new").length;
+
+  el.innerHTML=`<div class="quiz-setup">
+    <h2>Build your practice test</h2>
+    <p>Answer honestly before checking — every result feeds the spaced-repetition tracker, so the questions you miss will resurface.</p>
+
+    <div class="field"><span class="flabel">Sections</span><div class="pill-row">${pills}</div></div>
+
+    <div class="field"><span class="flabel">Test type</span>
+      <div class="seg">${typeBtns}</div>
+      <span class="seg desc">${typeDesc}</span>
+    </div>
+
+    <div class="field"><span class="flabel">Length</span><div class="seg">${lenBtns}</div></div>
+
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:4px">
+      <button class="btn btn-primary" onclick="startQuiz()" ${avail?'':'disabled style="opacity:.5;cursor:default"'}>Start test · ${avail} question${avail===1?'':'s'}</button>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)">${reviewCount} due for review · ${newCount} never seen</span>
+    </div>
+  </div>`;
+}
+function setType(t){quizType=t; renderSetup();}
+function setLen(l){quizLen=l; renderSetup();}
+function togglePill(sec){
+  if(sec==="all"){ quizSecs=new Set(["all"]); }
+  else{
+    quizSecs.delete("all");
+    if(quizSecs.has(sec)) quizSecs.delete(sec); else quizSecs.add(sec);
+    if(quizSecs.size===0) quizSecs=new Set(["all"]);
+  }
+  renderSetup();
+}
+function basePool(){   // questions in the selected sections, ignoring type/length
+  return quizSecs.has("all") ? [...QUESTIONS] : QUESTIONS.filter(q=>quizSecs.has(q.s));
+}
+function poolForType(type){
+  const base=basePool();
+  if(type==="weak") return base.filter(q=>{const s=statusOf(q.id);return s==="weak"||s==="new";});
+  return base;
+}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+function buildPool(){
+  let pool=poolForType(quizType);
+  const limit = quizLen==="all" ? pool.length : Math.min(parseInt(quizLen,10), pool.length);
+  if(quizType==="smart") return weightedSample(pool, limit);
+  pool=shuffle([...pool]);
+  return pool.slice(0, limit);
+}
+function countAvailable(){return buildPool().length;}
+
+function startQuiz(){
+  const pool=buildPool();
+  if(!pool.length) return;
+  quiz={items:pool, idx:0, answers:new Array(pool.length).fill(null)};
+  document.getElementById("quizSetup").classList.add("hidden");
+  document.getElementById("quizResults").classList.add("hidden");
+  document.getElementById("quizRun").classList.remove("hidden");
+  renderQuestion();
+}
+function secName(id){const s=SECTIONS.find(x=>x.id===id);return s?s.n:id;}
+
+function renderQuestion(){
+  const run=document.getElementById("quizRun");
+  const item=quiz.items[quiz.idx];
+  const answered=quiz.answers[quiz.idx];
+  const total=quiz.items.length;
+  const correctSoFar=quiz.answers.filter(a=>a&&a.correct).length;
+  const pct=Math.round((quiz.idx)/total*100);
+  let choices="";
+  item.c.forEach((ch,i)=>{
+    let cls="choice";
+    if(answered){
+      if(i===item.a) cls+=" correct";
+      else if(i===answered.pick) cls+=" wrong";
+    }
+    const dis=answered?"disabled":"";
+    choices+=`<button class="${cls}" ${dis} onclick="answer(${i})">
+      <span class="let">${String.fromCharCode(65+i)}</span><span>${ch}</span></button>`;
+  });
+  let explain="";
+  if(answered){
+    const ok=answered.correct;
+    explain=`<div class="explain">
+      <span class="verdict ${ok?'ok':'no'}">${ok?'Credit · Correct':'Debit · Incorrect'}</span>
+      <p>${item.alt?item.alt:item.e}</p></div>`;
+  }
+  const isLast=quiz.idx===total-1;
+  run.innerHTML=`<div class="qcard">
+    <div class="qmeta"><span class="badge">${secName(item.s)}</span><span>Question ${quiz.idx+1} of ${total}</span></div>
+    <div class="progress"><i style="width:${pct}%"></i></div>
+    <p class="qtext">${item.q}</p>
+    <div class="choices">${choices}</div>
+    ${explain}
+    <div class="qfoot">
+      <span class="score">Score: ${correctSoFar} / ${quiz.answers.filter(a=>a).length} answered</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="quitQuiz()">End</button>
+        ${answered? `<button class="btn btn-primary" onclick="${isLast?'finishQuiz()':'nextQ()'}">${isLast?'See results':'Next →'}</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+function answer(i){
+  if(quiz.answers[quiz.idx]) return;
+  const item=quiz.items[quiz.idx];
+  const correct=i===item.a;
+  quiz.answers[quiz.idx]={pick:i, correct:correct};
+  recordResult(item.id, correct);   // feed the spaced-repetition tracker
+  renderQuestion();
+}
+function nextQ(){ if(quiz.idx<quiz.items.length-1){quiz.idx++; renderQuestion();} }
+function quitQuiz(){ finishQuiz(true); }
+
+function finishQuiz(early){
+  const answered=quiz.answers.filter(a=>a);
+  const correct=answered.filter(a=>a.correct).length;
+  const totalAnswered=answered.length;
+  const pct= totalAnswered? Math.round(correct/totalAnswered*100):0;
+  // per-section breakdown
+  const bySec={};
+  quiz.items.forEach((it,idx)=>{
+    const ans=quiz.answers[idx];
+    if(!ans) return;
+    if(!bySec[it.s]) bySec[it.s]={c:0,t:0};
+    bySec[it.s].t++; if(ans.correct) bySec[it.s].c++;
+  });
+  let rows="";
+  Object.keys(bySec).sort().forEach(sid=>{
+    const o=bySec[sid]; const p=Math.round(o.c/o.t*100);
+    rows+=`<div class="row"><span>${secName(sid)} · ${STUDY[sid].title.split('— ')[1]}</span>
+      <span class="bar"><i style="width:${p}%"></i></span>
+      <span class="frac">${o.c}/${o.t}</span></div>`;
+  });
+  const pass=pct>=75;
+  document.getElementById("quizRun").classList.add("hidden");
+  const res=document.getElementById("quizResults");
+  res.classList.remove("hidden");
+  res.innerHTML=`<div class="results">
+    <p class="label">Practice score${early?' (ended early)':''}</p>
+    <p class="big ${pass?'pass':'fail'}">${pct}%</p>
+    <p class="verdict-line">${correct} of ${totalAnswered} correct · ${pass?'above the 75 line':'below the 75 line — keep drilling'}</p>
+    <div class="breakdown">${rows||'<div class="row"><span>No questions answered.</span></div>'}</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="renderSetup()">New test</button>
+      <button class="btn btn-ghost" onclick="setMode('progress')">View progress</button>
+      <button class="btn btn-ghost" onclick="setMode('study')">Memory aids</button>
+    </div>
+  </div>`;
+}
+
+/* ----- Progress dashboard ----- */
+function renderProgress(){
+  const view=document.getElementById("progressView");
+  const p=Store.read();
+  const tally={new:0,weak:0,learning:0,mastered:0};
+  const bySec={};
+  SECTIONS.forEach(s=>bySec[s.id]={new:0,weak:0,learning:0,mastered:0,total:0});
+  QUESTIONS.forEach(q=>{
+    const st=statusOf(q.id);
+    tally[st]++; bySec[q.s][st]++; bySec[q.s].total++;
+  });
+  const totalQ=QUESTIONS.length;
+  const attempted=totalQ-tally.new;
+  const masteredPct=Math.round(tally.mastered/totalQ*100);
+
+  // overall counters
+  let totSeen=0,totCorrect=0;
+  Object.values(p.q||{}).forEach(r=>{totSeen+=r.seen||0;totCorrect+=r.correct||0;});
+  const accuracy = totSeen? Math.round(totCorrect/totSeen*100):0;
+
+  const note = storageLive
+    ? `Progress is saved in this browser and persists across sessions.`
+    : `Heads-up: this browser is blocking local storage (common in a sandboxed preview), so progress will only last this session. Save the file and open it directly in your browser for it to stick.`;
+
+  let secRows="";
+  SECTIONS.forEach(s=>{
+    const o=bySec[s.id]; const t=o.total||1;
+    const seg=(cls,v)=>v?`<i class="${cls}" style="width:${v/t*100}%"></i>`:"";
+    secRows+=`<div class="mrow">
+      <span class="mname"><b>${s.n}</b> <small>${s.label}</small></span>
+      <span class="seg-track">
+        ${seg("seg-master",o.mastered)}${seg("seg-learning",o.learning)}${seg("seg-weak",o.weak)}${seg("seg-new",o.new)}
+      </span>
+      <span class="mfrac">${o.mastered}/${o.total}</span>
+    </div>`;
+  });
+
+  view.innerHTML=`
+    <div class="dash-head"><h2>Your progress</h2>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)">${attempted}/${totalQ} questions attempted</span>
+    </div>
+    <div class="tiles">
+      <div class="tile accent"><div class="num">${masteredPct}%</div><div class="cap">Mastered</div></div>
+      <div class="tile"><div class="num">${accuracy}%</div><div class="cap">Lifetime accuracy</div></div>
+      <div class="tile warn"><div class="num">${tally.weak}</div><div class="cap">Weak spots</div></div>
+      <div class="tile"><div class="num">${tally.new}</div><div class="cap">Never seen</div></div>
+    </div>
+
+    <div class="sec-master">
+      <h3>Mastery by section</h3>
+      ${secRows}
+      <div class="legend">
+        <span><i style="background:var(--credit)"></i>Mastered (box 4–5)</span>
+        <span><i style="background:#9bbcae"></i>Learning (box 3)</span>
+        <span><i style="background:var(--debit)"></i>Weak (box 1–2)</span>
+        <span><i style="background:var(--rule-strong)"></i>New</span>
+      </div>
+      <div class="dash-actions">
+        <button class="mini-btn" onclick="changeUserKey()">${getUserKey()?('Sync: '+getUserKey()):'Set sync key'}</button>
+        <button class="mini-btn" onclick="quizType='weak';quizSecs=new Set(['all']);setMode('quiz')">Drill weak spots →</button>
+        <button class="mini-btn" onclick="exportProgress()">Export progress</button>
+        <button class="mini-btn" onclick="document.getElementById('importFile').click()">Import progress</button>
+        <button class="mini-btn danger" onclick="resetProgress()">Reset all</button>
+        <input type="file" id="importFile" accept="application/json" class="hidden" onchange="importProgress(event)">
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);margin:14px 0 0;font-family:'IBM Plex Mono',monospace">${note}</p>
+    </div>`;
+}
+function exportProgress(){
+  const data=JSON.stringify(Store.read(),null,2);
+  const blob=new Blob([data],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="far-ledger-progress.json";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importProgress(ev){
+  const file=ev.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const obj=JSON.parse(reader.result);
+      if(obj && obj.q){Store.write(obj); renderProgress();}
+      else alert("That file doesn't look like a FAR Ledger progress export.");
+    }catch(e){alert("Couldn't read that file — make sure it's the exported .json.");}
+  };
+  reader.readAsText(file);
+  ev.target.value="";
+}
+function resetProgress(){
+  if(!confirm("Reset all progress? This clears every question's history and can't be undone.")) return;
+  Store.write({q:{}}); memFallback={q:{}}; renderProgress();
+}
+
+/* init */
+renderStudyTabs();
+renderStudy();
+ensureUserKey();
+startupSync();
+</script>
+</body>
+</html>
