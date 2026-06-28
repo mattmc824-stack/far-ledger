@@ -891,6 +891,15 @@ function countAvailable(){return buildPool().length;}
 function startQuiz(){
   const pool=buildPool();
   if(!pool.length) return;
+  // Shuffle answer choices per question (clone so the bank is never mutated)
+  const shuffled = pool.map(function(q){
+    const idxs = q.c.map(function(_,i){return i;});
+    for(let i=idxs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=idxs[i];idxs[i]=idxs[j];idxs[j]=t;}
+    const newChoices = idxs.map(function(i){return q.c[i];});
+    const newAnswer = idxs.indexOf(q.a);
+    return Object.assign({}, q, {c:newChoices, a:newAnswer});
+  });
+  pool.length = 0; Array.prototype.push.apply(pool, shuffled);
   quiz={items:pool, idx:0, answers:new Array(pool.length).fill(null)};
   document.getElementById("quizSetup").classList.add("hidden");
   document.getElementById("quizResults").classList.add("hidden");
