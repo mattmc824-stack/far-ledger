@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FAR Ledger — CPA Study & Practice</title>
+<title>Connor's CPA Test App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -224,19 +224,46 @@
   .hidden{display:none!important}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   :focus-visible{outline:2.5px solid var(--gold);outline-offset:2px;border-radius:4px}
+
+/* ---------- Flashcards ---------- */
+.cards-intro{color:var(--muted);font-size:14px;margin:18px 0 6px}
+.card-stage{display:flex;flex-direction:column;align-items:center;margin-top:18px}
+.flashcard{width:100%;max-width:560px;min-height:300px;perspective:1600px;cursor:pointer}
+.flashcard-inner{position:relative;width:100%;min-height:300px;transition:transform .5s;transform-style:preserve-3d}
+.flashcard.flipped .flashcard-inner{transform:rotateY(180deg)}
+.flashcard-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background:var(--card);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);
+  padding:26px 24px;display:flex;flex-direction:column;justify-content:center;overflow:auto}
+.flashcard-face.front::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--credit);border-radius:14px 0 0 14px}
+.flashcard-face.back{transform:rotateY(180deg);border-color:var(--credit)}
+.flashcard-face.back::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--gold);border-radius:14px 0 0 14px}
+.fc-kicker{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.fc-acr{font-family:"Source Serif 4",serif;font-weight:700;font-size:30px;line-height:1.05;margin:0 0 8px}
+.fc-q{font-family:"Source Serif 4",serif;font-size:20px;line-height:1.4;margin:0}
+.fc-tap{margin-top:auto;padding-top:16px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);letter-spacing:.06em}
+.fc-full{font-size:13px;color:var(--muted);margin:0 0 12px}
+.fc-list{list-style:none;margin:0 0 12px;padding:0}
+.fc-list li{font-size:14px;padding:4px 0;border-bottom:1px dashed var(--rule);display:flex;gap:9px}
+.fc-list li:last-child{border-bottom:0}
+.fc-list li .k{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--credit);min-width:18px;text-align:center;flex:none}
+.fc-hook{background:var(--credit-soft);border-radius:7px;padding:9px 11px;font-size:13px;color:#16503c;margin:0}
+.fc-hook b{color:var(--credit)}
+.fc-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:18px;flex-wrap:wrap}
+.fc-counter{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);min-width:74px;text-align:center}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <h1>FAR Ledger</h1>
+      <h1>Connor's CPA Test App</h1>
       <span class="tag">CPA · 2026</span>
     </div>
     <p class="sub">Active-recall memory aids and a scored practice exam across all six FAR areas. Drill the acronyms, then test under exam-style pressure.</p>
     <div class="modes" role="tablist" aria-label="Mode">
       <button id="m-study" role="tab" aria-selected="true" onclick="setMode('study')">Study · Memory Aids</button>
       <button id="m-quiz" role="tab" aria-selected="false" onclick="setMode('quiz')">Practice Test</button>
+      <button id="m-cards" role="tab" aria-selected="false" onclick="setMode('cards')">Flashcards</button>
       <button id="m-progress" role="tab" aria-selected="false" onclick="setMode('progress')">Progress</button>
     </div>
   </header>
@@ -256,6 +283,12 @@
 
   <!-- PROGRESS -->
   <main id="progressView" class="hidden"></main>
+
+  <!-- FLASHCARDS -->
+  <main id="cardsView" class="hidden">
+    <div class="tabs" id="cardsTabs" role="tablist" aria-label="FAR section"></div>
+    <div id="cardsBody"></div>
+  </main>
 
   <footer>Built from the 2026 FAR Study Guide · formulas and journal entries reconstructed from the source notes · not affiliated with the AICPA.</footer>
 </div>
@@ -598,7 +631,7 @@ function getToken(){ try{return localStorage.getItem(TOKEN_LS)||"";}catch(e){ret
 function setToken(t){ try{localStorage.setItem(TOKEN_LS,t);}catch(e){} }
 function clearToken(){ try{localStorage.removeItem(TOKEN_LS);}catch(e){} }
 async function login(){
-  const pw = prompt("Enter the FAR Ledger access password:");
+  const pw = prompt("Connor's CPA Test App — enter your password to continue:");
   if(pw===null) return false;
   try{
     const r = await fetch(API_BASE+"/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pw})});
@@ -665,9 +698,8 @@ async function startupSync(){
   }catch(e){ console.warn("startup sync failed (working offline/local-only)", e); }
 }
 function ensureUserKey(){
-  if(getUserKey()) return;
-  const k = prompt("Enter a sync name (e.g. your son's first name). Used to sync progress across devices:");
-  if(k && k.trim()) setUserKey(k.trim());
+  // Single fixed user for this family app.
+  if(getUserKey() !== "Connor") setUserKey("Connor");
 }
 function changeUserKey(){
   const cur = getUserKey();
@@ -739,14 +771,16 @@ let quiz=null;          // {items:[], idx, answers:[]}
 
 function setMode(m){
   mode=m;
-  ["study","quiz","progress"].forEach(x=>{
+  ["study","quiz","progress","cards"].forEach(x=>{
     document.getElementById("m-"+x).setAttribute("aria-selected", m===x);
   });
   document.getElementById("studyView").classList.toggle("hidden", m!=="study");
   document.getElementById("quizView").classList.toggle("hidden", m!=="quiz");
   document.getElementById("progressView").classList.toggle("hidden", m!=="progress");
+  document.getElementById("cardsView").classList.toggle("hidden", m!=="cards");
   if(m==="quiz" && !quiz) renderSetup();
   if(m==="progress") renderProgress();
+  if(m==="cards") renderCardsTabs();
 }
 
 /* ----- Study ----- */
@@ -1047,6 +1081,76 @@ function resetProgress(){
   if(!confirm("Reset all progress? This clears every question's history and can't be undone.")) return;
   Store.write({q:{}}); memFallback={q:{}}; renderProgress();
 }
+
+/* ----- Flashcards ----- */
+let cardsSec = "far1";
+let cardDeck = [];      // array of aid objects for the current section
+let cardIdx = 0;
+let cardFlipped = false;
+
+function renderCardsTabs(){
+  const t = document.getElementById("cardsTabs");
+  t.innerHTML = "";
+  SECTIONS.forEach(s=>{
+    const b = document.createElement("button");
+    b.className = "tab";
+    b.setAttribute("role","tab");
+    b.setAttribute("aria-selected", s.id===cardsSec);
+    b.innerHTML = s.n + "<small>" + s.label + "</small>";
+    b.onclick = ()=>{ cardsSec = s.id; cardIdx = 0; cardFlipped = false; renderCardsTabs(); renderCards(); };
+    t.appendChild(b);
+  });
+  renderCards();
+}
+
+function buildDeck(){
+  const data = STUDY[cardsSec];
+  cardDeck = data ? data.aids.slice() : [];
+}
+
+function renderCards(){
+  buildDeck();
+  const body = document.getElementById("cardsBody");
+  if(!cardDeck.length){ body.innerHTML = '<div class="empty">No flashcards in this section.</div>'; return; }
+  if(cardIdx >= cardDeck.length) cardIdx = 0;
+  const a = cardDeck[cardIdx];
+  let items = "";
+  a.items.forEach(it=> items += '<li><span class="k">'+it[0]+'</span><span>'+it[1]+'</span></li>');
+  const hook = a.hook ? '<p class="fc-hook">'+a.hook+'</p>' : "";
+  const flippedCls = cardFlipped ? " flipped" : "";
+  body.innerHTML =
+    '<p class="cards-intro">Read the prompt, recall the answer in your head, then tap the card to check yourself. Not scored \u2014 just practice.</p>' +
+    '<div class="card-stage">' +
+      '<div class="flashcard'+flippedCls+'" id="theCard" onclick="flipCard()">' +
+        '<div class="flashcard-inner">' +
+          '<div class="flashcard-face front">' +
+            '<div class="fc-kicker">Flashcard \u00b7 ' + (SECTIONS.find(x=>x.id===cardsSec)||{}).n + '</div>' +
+            '<div class="fc-acr">'+a.acr+'</div>' +
+            '<p class="fc-q">'+a.full+'?</p>' +
+            '<div class="fc-tap">Tap to reveal \u2192</div>' +
+          '</div>' +
+          '<div class="flashcard-face back">' +
+            '<div class="fc-kicker">Answer</div>' +
+            '<div class="fc-acr" style="font-size:22px">'+a.acr+'</div>' +
+            '<p class="fc-full">'+a.full+'</p>' +
+            '<ul class="fc-list">'+items+'</ul>' +
+            hook +
+            '<div class="fc-tap">Tap to flip back</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="fc-controls">' +
+        '<button class="mini-btn" onclick="prevCard(event)">\u2190 Prev</button>' +
+        '<span class="fc-counter">'+(cardIdx+1)+' / '+cardDeck.length+'</span>' +
+        '<button class="mini-btn" onclick="nextCard(event)">Next \u2192</button>' +
+        '<button class="mini-btn" onclick="shuffleCards(event)">Shuffle</button>' +
+      '</div>' +
+    '</div>';
+}
+function flipCard(){ cardFlipped = !cardFlipped; const c=document.getElementById("theCard"); if(c) c.classList.toggle("flipped", cardFlipped); }
+function nextCard(e){ if(e) e.stopPropagation(); cardFlipped=false; cardIdx=(cardIdx+1)%cardDeck.length; renderCards(); }
+function prevCard(e){ if(e) e.stopPropagation(); cardFlipped=false; cardIdx=(cardIdx-1+cardDeck.length)%cardDeck.length; renderCards(); }
+function shuffleCards(e){ if(e) e.stopPropagation(); for(let i=cardDeck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cardDeck[i],cardDeck[j]]=[cardDeck[j],cardDeck[i]];} cardIdx=0; cardFlipped=false; renderCards(); }
 
 /* init */
 renderStudyTabs();
